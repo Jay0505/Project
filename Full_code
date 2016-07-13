@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -63,7 +64,7 @@ namespace project_assignment3
 
 		public Node()
 		{
-			pdata = null;
+			pdata = string.Empty ;
 			pfirst = null;
 			pnext = null;
 			pparent = null;
@@ -101,8 +102,10 @@ namespace project_assignment3
 		public static Stack<string> operand_st = new Stack<string>();
 		public static Stack<string> bracket_st = new Stack<string>();
 		public static Stack<Node> node_st = new Stack<Node>();
+		public static Stack<Node> node_der = new Stack<Node>();
 		public static bool temp1 = false;
 		public static bool temp2 = false;
+
 
 
 		public static void Main(string[] args)
@@ -111,8 +114,8 @@ namespace project_assignment3
 			Console.WriteLine("\nEnter your regular expression");
 			string stregex = Console.ReadLine();
 
-			//Console.WriteLine("\nEnter your string");
-			//string str = Console.ReadLine();
+			Console.WriteLine("\nEnter your string");
+			string str = Console.ReadLine();
 
 
 
@@ -125,10 +128,25 @@ namespace project_assignment3
 				Display_Contents_of_the_node(root);
 				Console.WriteLine(Nullable(root));
 			}
+			Node deri_node = new Node();
+
+			for (int i = 0; i <= str.Length-1; i++)
+			{
+				if (i == 0)
+				{
+					deri_node = Derivative(root, str[i]);
+				}
+				else
+				{
+					deri_node = Derivative(deri_node, str[i]);
+				}
+
+			}
+			Display_Contents_of_the_node(deri_node);
 
 		}
-
-
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
 
 		public static bool Nullable(Node Nullable_root)
 		{
@@ -138,9 +156,12 @@ namespace project_assignment3
 			{
 				if (Nullable_root.pdata == "*")
 					IsNullable = true;
-				
 
+				if (Nullable_root.pdata == "!")
+					IsNullable = true;
 
+				if (Nullable_root.pdata == "@")
+					IsNullable = false;
 
 				if (Nullable_root.pdata == "+")
 				{
@@ -169,7 +190,8 @@ namespace project_assignment3
 			return IsNullable;
 		}
 
-
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------------------------//
 		public static void Nullable_Auxillary_function(Node Nullable_root)
 		{
 			Node temp_first = Nullable_root.pfirst;
@@ -182,6 +204,133 @@ namespace project_assignment3
 				temp_next = temp_next.pnext;
 			}
 		}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+
+		public static Node Derivative(Node Der_node, char c)
+		{
+			Node node_Null = new Node("@");
+			Node node_empty = new Node("!");
+			char Der_char = Convert.ToChar(Der_node.pdata);
+
+			if (Der_node == null || Der_node.pdata == null)
+				return node_Null;
+ 
+
+			if (Der_node.pdata == "+")
+			{
+				var Der_aux_plus_node = Derivative_Auxillary_plus(Der_node, c);
+				return Der_aux_plus_node;
+
+			}
+
+			if (Der_node.pdata == "~")
+			{
+
+				if (Nullable(Der_node.pfirst))
+				{
+					var Der_aux_con_node = Derivative_Auxillary_Concatenation(Der_node, c);
+					return Der_aux_con_node;
+				}
+				else
+				{
+					var Der_aux_con_node = Derivative_Auxillary_Concatenation_Else(Der_node, c);
+					return Der_aux_con_node;
+				}
+ 
+			}
+
+			if (Der_char == c)
+				return node_empty;
+
+			else
+				return node_Null;
+
+
+		}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static Node Derivative_Auxillary_plus(Node Der_node, char c)
+		{
+			Node opr_node = new Node("+");
+
+
+			var node1 = Derivative(Der_node.pfirst, c);
+			Node der_next = Der_node.pfirst.pnext;
+
+			while (der_next != null)
+			{
+				var node2 = Derivative(der_next, c);
+				node_der.Push(node2);
+				der_next = der_next.pnext;
+			}
+
+			opr_node.pfirst = node1;
+			node1.pparent = opr_node;
+		    var temp_node1 = node1;
+			while (node_der.Count != 0)
+			{
+				temp_node1.pnext = node_der.Pop();
+				temp_node1.pnext.pparent = opr_node;
+				temp_node1 = temp_node1.pnext;
+			}
+
+			return opr_node;
+		}
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static Node Derivative_Auxillary_Concatenation_Else(Node Der_node, char c)
+		{
+			Node Der_first_node = Der_node.pfirst;
+			Node Der_next_node = Der_node.pfirst.pnext;
+			var node1 = Derivative(Der_first_node, c);
+			StringBuilder sb_der = new StringBuilder();
+			while (Der_next_node != null)
+			{
+				sb_der.Append(Der_next_node.pdata);
+				Der_next_node = Der_next_node.pnext;
+			}
+			var node2 = new Node(sb_der.ToString());
+			var opr_node = new Node("~");
+
+			opr_node.pfirst = node1;
+			node1.pnext = node2;
+
+			node1.pparent = opr_node;
+			node2.pparent = opr_node;
+
+			return opr_node;
+		}
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
+
+		public static Node Derivative_Auxillary_Concatenation(Node Der_node, char c)
+		{
+			Node Der_first_node = Der_node.pfirst;
+			Node Der_next_node = Der_node.pfirst.pnext;
+			var opr_node = new Node();
+			var node3 = new Node();
+
+			opr_node = Derivative_Auxillary_Concatenation_Else(Der_node, c);
+			node3 = Derivative(Der_next_node, c);
+
+			Node opr_node2 = new Node("+");
+
+			opr_node2.pfirst = opr_node;
+			opr_node.pnext = node3;
+
+			opr_node.pparent = opr_node2;
+			node3.pparent = opr_node2;
+
+			return opr_node2;
+
+		}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
 	//---------------This method reads the string(regular expression) in reverse order and calls various other functions.
     //                 The return value of this function is a root node of the tree.--------------------------------------//
 
@@ -285,6 +434,8 @@ namespace project_assignment3
 		}
 
 
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
 
 		public static void Construttree_Auxillary()
 		{
@@ -347,7 +498,8 @@ namespace project_assignment3
 		}
 
 
-
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
 		public static void Star_operator_encountered(char operator1)
 		{
 			Node main_root2 = new Node(operator1.ToString());
@@ -358,6 +510,7 @@ namespace project_assignment3
 		}
 
 
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
     //----------------This method is used to read operands from the operand stack, conacatenates all the operands
     //                  in case if there are more than one operand in the stack and push concatenated operands as one
     //                    node into the node stack  ------------------------------------------------------------------//
@@ -405,7 +558,7 @@ namespace project_assignment3
 		}
 
 
-
+//---------------------------------------------------------------------------------------------------------------------------------------------------//
     //-------------This method concatenates contents of operand stack and node stack together when there is one operator
 		//---------------------------------------------------------------------------------------------------------------//
 
@@ -423,7 +576,7 @@ namespace project_assignment3
 
 
 
-
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
 		//--------------This method concatenates node stack elements when there are no operands and operators-----------------//
 		//----------------------------------------------------------------------------------------------------------------//
 
@@ -462,7 +615,7 @@ namespace project_assignment3
 		}
 
 
-
+//-------------------------------------------------------------------------------------------------------------------------------------------//
 	//-------------------This method concatenates contents of operand stack and node stack only when there are 0 operators
 		//---------------------------------------------------------------------------------------------------------------//
 
@@ -542,6 +695,7 @@ namespace project_assignment3
 
 
 
+//-------------------------------------------------------------------------------------------------------------------------------------------//
  //-----------This method is used to display the contents of the tree formed as per BFS traversal-------------------------------//
 
 
@@ -553,6 +707,37 @@ namespace project_assignment3
 			{
 				Node temp_Dfs_node = st.Dequeue();
 				Console.WriteLine("\t{0}", temp_Dfs_node.pdata);
+				if (temp_Dfs_node.pfirst != null)
+				{
+					st.Enqueue(temp_Dfs_node.pfirst);
+					Node next_node = temp_Dfs_node.pfirst;
+					while (next_node.pnext != null)
+					{
+						st.Enqueue(next_node.pnext);
+						next_node = next_node.pnext;
+					}
+				}
+			}
+		}
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void Display_Contents_of_Derivative_node(Node root_node)
+		{
+			Queue<Node> st = new Queue<Node>();
+			Node temp_Dfs_node = new Node();
+			st.Enqueue(root_node);
+			while (st.Count != 0)
+			{
+				temp_Dfs_node = st.Dequeue();
+				if (temp_Dfs_node.pdata == string.Empty)
+					Console.WriteLine("\t!");
+				if (temp_Dfs_node == null)
+					Console.WriteLine("\t@");
+				if (temp_Dfs_node.pdata != null)
+					Console.WriteLine("\t{0}", temp_Dfs_node.pdata);
+				
 				if (temp_Dfs_node.pfirst != null)
 				{
 					st.Enqueue(temp_Dfs_node.pfirst);
