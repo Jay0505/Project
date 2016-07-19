@@ -1,0 +1,899 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+
+namespace project_assignment3
+{
+
+	class Node
+	{
+		private string Data;
+		private Node First;
+		private Node Next;
+		private Node Parent;
+
+		public string pdata
+		{
+			get
+			{
+				return Data;
+			}
+			set
+			{
+				Data = value;
+			}
+		}
+
+		public Node pfirst
+		{
+			get
+			{
+				return First;
+			}
+
+			set
+			{
+				First = value;
+			}
+		}
+
+		public Node pnext
+		{
+			get
+			{
+				return Next;
+			}
+			set
+			{
+				Next = value;
+			}
+		}
+
+		public Node pparent
+		{
+			get
+			{
+				return Parent;
+			}
+			set
+			{
+				Parent = value;
+			}
+		}
+
+		public Node()
+		{
+			pdata = string.Empty ;
+			pfirst = null;
+			pnext = null;
+			pparent = null;
+		}
+
+		public Node(string data)
+		{
+			pdata = data;
+			pfirst = null;
+			pnext = null;
+			pparent = null;
+		}
+		public Node(string data, Node firstt, Node next, Node parent)
+		{
+			Data = data;
+			First = firstt;
+			Next = next;
+			Parent = parent;
+		}
+	}
+
+
+
+
+
+
+	class MainClass
+	{
+ //--------------------Four stacks. 1) Operator stack, stores operators as characters
+		// ---------------2) Operand stack, stores operands as strings 
+		//----------------3) Bracket stack, to check for equal no of brackets in the regular expression
+		//----------------4) Node stack, which contains operands and operators concatenated and stored as node type----------//
+
+		public static Stack<char> operator_st = new Stack<char>();
+		public static Stack<string> operand_st = new Stack<string>();
+		public static Stack<string> bracket_st = new Stack<string>();
+		public static Stack<Node> node_st = new Stack<Node>();
+		public static Stack<Node> node_der = new Stack<Node>();
+		public static bool temp1 = false;
+		public static bool temp2 = false;
+
+
+
+		public static void Main(string[] args)
+		{
+
+			Console.WriteLine("\nEnter your regular expression");
+			string stregex = Console.ReadLine();
+
+			Console.WriteLine("\nEnter your string");
+			string str = Console.ReadLine();
+
+
+
+			Node root = ConstructTree(stregex);
+			if (root == null)
+				Console.WriteLine("\nPlease enter valid regular expression");
+
+			else
+			{
+				Display_Contents_of_the_node(root);
+				Console.WriteLine(Nullable(root));
+			}
+
+			Node deri_node = new Node();
+
+			for (int i = 0; i <= str.Length-1; i++)
+			{
+				char alp = str[i];
+				if (i == 0)
+					deri_node = Derivative(root, str[i]);
+				
+				else
+					deri_node = Derivative(deri_node, str[i]);
+
+			}
+			Console.WriteLine("The contents of derinode are : ");
+			Display_Contents_of_the_node(deri_node);
+			Console.WriteLine("Is the deri node nullable? : {0} ", Nullable(deri_node));
+
+		}
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+
+		public static bool Nullable(Node Nullable_root)
+		{
+			
+			bool IsNullable = false;
+			if (Nullable_root != null)
+			{
+				if (char.IsLetter(Convert.ToChar(Nullable_root.pdata)))
+				{
+					IsNullable = false;
+				}
+				if (Nullable_root.pdata == "*")
+					IsNullable = true;
+
+				if (Nullable_root.pdata == "!")
+					IsNullable = true;
+
+				if (Nullable_root.pdata == "@")
+					IsNullable = false;
+
+				if (Nullable_root.pdata == "+")
+				{
+					Nullable_Auxillary_function(Nullable_root);
+					if (temp2 == true || temp1 == true)
+						IsNullable = true;
+					if (temp1 == false && temp2 == false)
+						IsNullable = false;
+				}
+
+				if (Nullable_root.pdata == "~")
+				{
+					Nullable_Auxillary_function(Nullable_root);
+					if (temp2 == false || temp1 == false)
+						IsNullable = false;
+					if (temp1 == true && temp2 == true)
+						IsNullable = true;
+				}
+
+
+
+			}
+			else
+				IsNullable = true;
+		
+
+
+			return IsNullable;
+		}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void Nullable_Auxillary_function(Node Nullable_root)
+		{
+			Node temp_first = Nullable_root.pfirst;
+
+			temp1 = Nullable(temp_first);
+			Node temp_next = temp_first.pnext;
+			while (temp_next != null)
+			{
+				temp2 = Nullable(temp_next);
+				temp_next = temp_next.pnext;
+			}
+		}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+
+		public static Node Derivative(Node Der_node, char c)
+		{
+			
+				Node node_Null = new Node("@");
+				Node node_empty = new Node("!");
+				char Der_char = Convert.ToChar(Der_node.pdata);
+
+				if (Der_node == null || Der_node.pdata == null)
+					return node_Null;
+
+
+				if (Der_node.pdata == "+")
+				{
+					var Der_aux_plus_node = Derivative_Auxillary_plus(Der_node, c);
+					return Der_aux_plus_node;
+
+				}
+
+				if (Der_node.pdata == "~")
+				{
+					if (Nullable(Der_node.pfirst))
+					{
+						var Der_aux_con_node = Derivative_Auxillary_Concatenation(Der_node, c);
+						return Der_aux_con_node;
+					}
+					else
+					{
+						var Der_aux_con_node = Derivative_Auxillary_Concatenation_Else(Der_node, c);
+						return Der_aux_con_node;
+					}
+
+				}
+
+				if (Der_node.pdata == "*")
+				{
+					Node Der_aux_star_node = Derivative_Auxillary_Star(Der_node, c);
+					return Der_aux_star_node;
+				}
+
+				if (Der_char == c)
+					return node_empty;
+
+			else
+					return node_Null;
+
+
+		}
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static Node Derivative_Auxillary_plus(Node Der_node, char c)
+		{
+			Node opr_node = new Node("+");
+
+
+			var node1 = Derivative(Der_node.pfirst, c);
+			Node der_next = Der_node.pfirst.pnext;
+
+			while (der_next != null)
+			{
+				var node2 = Derivative(der_next, c);
+				node_der.Push(node2);
+				der_next = der_next.pnext;
+			}
+
+			opr_node.pfirst = node1;
+			node1.pparent = opr_node;
+		    var temp_node1 = node1;
+			while (node_der.Count != 0)
+			{
+				temp_node1.pnext = node_der.Pop();
+				temp_node1.pnext.pparent = opr_node;
+				temp_node1 = temp_node1.pnext;
+			}
+
+			return opr_node;
+		}
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static Node Derivative_Auxillary_Concatenation_Else(Node Der_node, char c)
+		{
+			Node return_node = new Node();
+			var opr_node = new Node("~");
+			if (Der_node.pdata == "~")
+			{
+				Node Der_first_node = Der_node.pfirst;
+				Node Der_next_node = new Node();
+				Der_next_node = Der_node.pfirst.pnext;
+
+				var node1 = Derivative(Der_first_node, c);
+				opr_node.pfirst = node1;
+				node1.pparent = opr_node;
+
+				Node temp_first_node = opr_node.pfirst;
+				while (Der_next_node != null)
+				{
+					temp_first_node.pnext = Der_next_node;
+					Der_next_node.pparent = opr_node;
+
+					temp_first_node = temp_first_node.pnext;
+					Der_next_node = Der_next_node.pnext;
+				}
+				return_node = opr_node;
+
+			}
+			if(Char.IsLetter(Convert.ToChar(Der_node.pdata)))
+			{
+				Node else_node = Derivative(Der_node, c);
+
+				if (Der_node.pnext != null)
+				{
+					opr_node.pfirst = else_node;
+					else_node.pparent = opr_node;
+
+					Node temp_first_node = opr_node.pfirst;
+					Node temp = Der_node.pnext;
+					while (temp != null)
+					{
+						temp_first_node.pnext = temp;
+						temp.pparent = opr_node;
+
+						temp = temp.pnext;
+						temp_first_node = temp_first_node.pnext;
+					}
+					return_node = opr_node;
+				}
+				else
+					return_node = else_node;
+
+
+			}
+			return return_node;
+
+		}
+		//--------------------------------------------------------------------------------------------------------------------------------------------------//
+		//--------------------------------------------------------------------------------------------------------------------------------------------------//
+
+		public static Node Derivative_Auxillary_Concatenation(Node Der_node, char c)
+		{
+			Node return_node = new Node();
+			Node concat_node = new Node("~");
+			Node plus_node = new Node("+");
+			if (Der_node.pdata == "~")
+			{
+				Node Der_first_node = Der_node.pfirst;
+				Node Der_next_node = Der_node.pfirst.pnext;
+				Node Derivative_next_node = new Node();
+				Node Derivative_first_node = Derivative(Der_first_node, c);
+				if (Nullable(Der_next_node))
+				{
+					Derivative_next_node = Derivative_Auxillary_Concatenation(Der_next_node, c);
+				}
+				else
+				{
+					Derivative_next_node = Derivative_Auxillary_Concatenation_Else(Der_next_node, c);
+				}
+
+				concat_node.pfirst = Derivative_first_node;
+				Derivative_first_node.pparent = concat_node;
+
+				Node temp_first_node = concat_node.pfirst;
+				while (Der_next_node != null)
+				{
+					temp_first_node.pnext = Der_next_node;
+					Der_next_node.pparent = concat_node;
+
+					temp_first_node = temp_first_node.pnext;
+					Der_next_node = Der_next_node.pnext;
+				}
+
+				plus_node.pfirst = concat_node;
+				concat_node.pparent = plus_node;
+
+				concat_node.pnext = Derivative_next_node;
+				Derivative_next_node.pparent = plus_node;
+
+				return_node = plus_node;
+			}
+
+			if (Char.IsLetter(Convert.ToChar(Der_node.pdata)))
+			{
+				Node else_node = Derivative(Der_node, c);
+				if (Der_node.pnext != null)
+				{
+					Node opr_node = new Node("~");
+					opr_node.pfirst = else_node;
+					else_node.pparent = opr_node;
+
+					Node temp_first_node = opr_node.pfirst;
+					Node temp = Der_node.pnext;
+					while (temp != null)
+					{
+						temp_first_node.pnext = temp;
+						temp.pparent = opr_node;
+
+						temp = temp.pnext;
+						temp_first_node = temp_first_node.pnext;
+					}
+					return_node = opr_node;
+				}
+				else
+					return_node = else_node;
+
+
+			}
+			return return_node;
+
+		}
+
+
+
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+		public static Node changing_node_positions_auxillary(Node Der_node, Node previous_node, Node temp_der_node)
+		{
+			
+			Node der_first_next_node = Der_node.pfirst.pnext;
+			Node temp_der_next_node = temp_der_node.pnext;
+			Node main_first_node = Der_node.pfirst;
+
+			previous_node.pnext = main_first_node;
+			main_first_node.pnext = temp_der_next_node;
+
+			Der_node.pfirst = temp_der_node;
+			temp_der_node.pnext = der_first_next_node;
+
+			return Der_node;
+		}
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+		public static Node Derivative_Auxillary_Star(Node Der_node, char c)
+		{
+			Node concat_node = new Node("~");
+			Node derivative_node = new Node();
+			Node star_node = new Node("*");
+			Node star_first_node = Der_node.pfirst;
+
+			star_node.pfirst = star_first_node;
+			star_first_node.pparent = star_node;
+
+			derivative_node = Derivative(Der_node.pfirst, c);
+
+			concat_node.pfirst = derivative_node;
+			derivative_node.pnext = star_node;
+
+			star_node.pparent = concat_node;
+			derivative_node.pparent = concat_node;
+
+			return concat_node;
+
+		}
+
+//------------------------------------------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void mkeps()
+		{
+
+		}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void IsMatches(string regex, string str)
+		{
+
+		}
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void Inject(string regex, string str)
+		{
+			
+		}
+
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------//
+	//---------------This method reads the string(regular expression) in reverse order and calls various other functions.
+    //                 The return value of this function is a root node of the tree.--------------------------------------//
+
+		public static Node ConstructTree(string regex)
+		{
+			int no_of_characters_scanned = 0;	
+			for (int i = regex.Length - 1; i >= 0; i--)
+			{
+				no_of_characters_scanned++;
+				if (regex[i] == ')')
+					bracket_st.Push(regex[i].ToString());
+				if (regex[i] == '(')
+				{
+					bracket_st.Pop();
+					/*if (bracket_st.Count == 0)
+						return null;
+					else
+					{
+						string br = bracket_st.Pop();
+						if (br == ")")
+						{
+							if (operator_st.Count == 0 && i!= 0)
+							{
+								Concatenating_operands();
+							}
+							char operator_star = operator_st.Pop();
+							if(operator_star == '*')
+								Star_operator_encountered(operator_star);
+							
+						}
+					}*/
+
+				}
+
+				//------------------if the read character is an alphabet, pust that into operand stack-------------------//
+				if (char.IsLetter(regex[i]))
+					operand_st.Push(regex[i].ToString());
+
+      
+        //------------------if the read character is a symbol, first check whehter there are any other symbols in
+        //                     operator stack. if the count of number of symbols in operator stack is 0, if there are
+        //                        any operands in the operand stack that needs to concatenated. if yes, then call 
+		//                           Concatenating_operands method to concatenated them.
+        //------------------if there are already any other symbols in the operator stack, before pushing the present symbol
+        //                     into the operator stack, call Dealing_when_Operator_encountered method and then push the
+        //                       present symbol into the stack ----------------------------------------------------------------//
+
+				if (char.IsSymbol(regex[i]) || regex[i] == '*')
+				{
+					if (regex[i] == '*' && regex[i - 1] != ')' && char.IsLetter(regex[i-1]))
+					{
+						Node node1 = new Node(regex[i].ToString());
+						Node node2 = new Node(regex[i - 1].ToString());
+
+						node1.pfirst = node2;
+						node2.pparent = node1;
+						node_st.Push(node1);
+						i = i - 1;
+						no_of_characters_scanned = no_of_characters_scanned+1;
+					}
+					else
+					{
+						if (operator_st.Count == 0)
+						{
+							if (node_st.Count == 0)
+								Concatenating_operands();
+							else
+								Concatenating_operands_in_operand_node_stack_together();
+								
+							
+						}
+						else
+							Dealing_when_Operator_encountered();
+
+						operator_st.Push(regex[i]);
+					}
+				}
+
+			}
+
+
+			if (no_of_characters_scanned == regex.Length && (operand_st.Count != 0 || operator_st.Count != 0 || node_st.Count!=0))
+			{
+			        if (bracket_st.Count != 0)
+				{
+					if (node_st.Count != 0)
+					{
+						while (node_st.Count == 0)
+						{
+							node_st.Pop();
+						}
+					}
+					return null;
+				}
+				Construttree_Auxillary();
+			}
+
+			Node main_root = node_st.Pop();
+			return main_root;
+
+		}
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+
+		public static void Construttree_Auxillary()
+		{
+			
+			if (operand_st.Count != 0 && node_st.Count == 0 && operator_st.Count == 0)
+				Concatenating_operands();
+
+			if (operand_st.Count != 0 && operator_st.Count == 0 && node_st.Count != 0)
+				Concatenate_operand_and_node_stack_elements_0_operators();
+
+			if (operand_st.Count == 0 && operator_st.Count == 0 && node_st.Count != 0)
+			{
+				if (node_st.Count >= 2)
+					Concatenate_nodestack_elements_when_0_operands_and_operators();
+
+			}
+
+			if (operand_st.Count == 0 & operator_st.Count != 0 && node_st.Count != 0)
+			{
+
+			}
+
+
+			while (operator_st.Count != 0)
+			{
+				char operator1 = operator_st.Pop();
+				if (operator_st.Count == 0)
+				{
+					if (operator1 == '*' && operand_st.Count == 0)
+						Star_operator_encountered(operator1);
+					if (operator1 == '*' && operand_st.Count != 0)
+					{
+						Concatenating_operands();
+						Star_operator_encountered(operator1);
+					}
+				}
+
+				if (operator_st.Count == 0 && operator1 != '*')
+				{
+					Concatenating_operands();
+					Node parent_operator = new Node(operator1.ToString());
+					Node node1 = node_st.Pop();
+					Node node2 = node_st.Pop();
+
+					node1.pnext = node2;
+					parent_operator.pfirst = node1;
+					node1.pparent = node2.pparent = parent_operator;
+					node_st.Push(parent_operator);
+
+				}
+
+
+				if (operator_st.Count != 0)
+				{
+					operator_st.Push(operator1);
+					Dealing_when_Operator_encountered();
+				}
+			}
+
+		}
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void Star_operator_encountered(char operator1)
+		{
+			Node main_root2 = new Node(operator1.ToString());
+			Node last_node = node_st.Pop();
+			main_root2.pfirst = last_node;
+			last_node.pparent = main_root2;
+			node_st.Push(main_root2);
+		}
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+    //----------------This method is used to read operands from the operand stack, conacatenates all the operands
+    //                  in case if there are more than one operand in the stack and push concatenated operands as one
+    //                    node into the node stack  ------------------------------------------------------------------//
+		public static void Concatenating_operands()
+		{
+			int first_node = 0;
+
+			if (operand_st.Count == 0)
+				return;
+
+			if (operand_st.Count == 1)
+			{
+				string operand = operand_st.Pop();
+				Node str = new Node(operand);
+				node_st.Push(str);
+				return;
+			}
+
+			if (operand_st.Count >= 2)
+			{
+				Node parent_operator = new Node("~");
+				while (operand_st.Count != 0)
+				{
+					string operand = operand_st.Pop();
+					Node str = new Node(operand);
+					if (first_node == 0 && parent_operator.pfirst == null)
+					{
+						parent_operator.pfirst = str;
+						str.pparent = parent_operator;
+						first_node++;
+					}
+					else
+					{
+						Node temp_node = parent_operator.pfirst;
+						while (temp_node.pnext != null)
+						{
+							temp_node = temp_node.pnext;
+						}
+						temp_node.pnext = str;
+						str.pparent = parent_operator;
+					}
+				}
+				node_st.Push(parent_operator);
+			}
+		}
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------//
+    //-------------This method concatenates contents of operand stack and node stack together when there is one operator
+		//---------------------------------------------------------------------------------------------------------------//
+
+
+		public static void Concatenating_operands_in_operand_node_stack_together()
+		{
+			while (operand_st.Count != 0)
+			{
+				Node node1 = new Node(operand_st.Pop());
+				node_st.Push(node1);
+			}
+			if (operand_st.Count == 0 && node_st.Count != 0)
+				Concatenate_nodestack_elements_when_0_operands_and_operators();
+		}
+
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------//
+		//--------------This method concatenates node stack elements when there are no operands and operators-----------------//
+		//----------------------------------------------------------------------------------------------------------------//
+
+
+		public static void Concatenate_nodestack_elements_when_0_operands_and_operators()
+		{
+			int first_node = 0;
+			Node parent_node = new Node("~");
+			if (node_st.Count > 1)
+			{
+				while (node_st.Count != 0)
+				{
+					Node str = node_st.Pop();
+
+					if (first_node == 0 && parent_node.pfirst == null)
+					{
+						parent_node.pfirst = str;
+						str.pparent = parent_node;
+						first_node++;
+					}
+					else
+					{
+						Node temp_node = parent_node.pfirst;
+						while (temp_node.pnext != null)
+						{
+							temp_node = temp_node.pnext;
+						}
+						temp_node.pnext = str;
+						str.pparent = parent_node;
+					}
+				}
+				node_st.Push(parent_node);
+			}
+
+
+		}
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------//
+	//-------------------This method concatenates contents of operand stack and node stack only when there are 0 operators
+		//---------------------------------------------------------------------------------------------------------------//
+
+
+		public static void Concatenate_operand_and_node_stack_elements_0_operators()
+		{
+			Node parent_node = new Node("~");
+			while (operand_st.Count != 0)
+			{
+				Node temp_node = new Node(operand_st.Pop());
+				if (parent_node.pfirst == null)
+				{
+					parent_node.pfirst = temp_node;
+					temp_node.pparent = parent_node;
+				}
+				else
+				{
+					Node next_node = parent_node.pfirst;
+					while (next_node.pnext != null)
+					{
+						next_node = next_node.pnext;
+					}
+					next_node.pnext = temp_node;
+					temp_node.pparent = parent_node;
+				}
+
+			}
+
+               while (node_st.Count != 0)
+			{
+				Node str = node_st.Pop();
+					Node temp_node = parent_node.pfirst;
+					while (temp_node.pnext != null)
+					{
+						temp_node = temp_node.pnext;
+					}
+					temp_node.pnext = str;
+					str.pparent = parent_node;
+				
+			}
+
+			node_st.Push(parent_node);
+		}
+
+
+
+ //---------This method is called when there are contents in operator stack and the present character read in the string
+ //            is a operator. First it checks whether are there any contents in the operand stack, if yes concatenate them
+ //               and adds that node to the node stack. Then performs create a node with the top most element of the operator 
+ //          		stack as parent and top two elements of the node stack as children. After creating this node, it again pushed
+ //                   back into the node stack ------------------------------------------------------------------------------------//
+
+
+		public static void Dealing_when_Operator_encountered()
+		{
+			    Concatenating_operands();
+
+				char operatorr = operator_st.Pop();
+			if (operatorr == '*')
+			{
+				operator_st.Push(operatorr);
+				return;
+			}
+				
+			if (node_st.Count >= 2)
+			{
+				Node parent_operator = new Node(operatorr.ToString());
+				Node node1 = node_st.Pop();
+				Node node2 = node_st.Pop();
+
+				node1.pnext = node2;
+				parent_operator.pfirst = node1;
+				node1.pparent = node2.pparent = parent_operator;
+				node_st.Push(parent_operator);
+			}
+		}
+
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------//
+ //-----------This method is used to display the contents of the tree formed as per BFS traversal-------------------------------//
+
+
+		public static void Display_Contents_of_the_node(Node root_node)
+		{
+			Queue<Node> st = new Queue<Node>();
+			st.Enqueue(root_node);
+			while (st.Count != 0)
+			{
+				Node temp_Dfs_node = st.Dequeue();
+				if (temp_Dfs_node.pparent != null)
+					Console.WriteLine("\tthe data is {0} and its parent is {1} ", temp_Dfs_node.pdata, temp_Dfs_node.pparent.pdata);
+				else
+					Console.WriteLine("The root value is {0} ", temp_Dfs_node.pdata);
+
+				if (temp_Dfs_node.pfirst != null)
+				{
+					st.Enqueue(temp_Dfs_node.pfirst);
+					Node next_node = temp_Dfs_node.pfirst;
+					while (next_node.pnext != null)
+					{
+						st.Enqueue(next_node.pnext);
+						next_node = next_node.pnext;
+					}
+				}
+			}
+		}
+
+
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+//-------------------------------------------------------------------------------------------------------------------------------------------------//
+		public static void Display_Contents_of_Derivative_node(Node root_node)
+		{
+			
+
+		}
+
+
+	}
+}
