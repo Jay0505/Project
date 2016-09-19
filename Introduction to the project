@@ -1,0 +1,15 @@
+This project is based upon the algorithm proposed by Martin Sulzmann and Lu in the paper 
+“POSIX REGULAR EXPRESSION PARSING WITH DERIVATIVES”. This algorithm uses an old concept in 
+the computer science “Derivative of a regular expression” proposed by Brozozowski. This 
+algorithm is comprised of three main functions namely
+                     
+♣	Derivative()
+♣	Nullable()
+♣	Mkeps()
+♣	Inject()
+
+
+The main advantage of this algorithm is that apart from specifying whether a given string 
+is matched by given regular expression or not, this algorithm also specifies how the regular 
+expression matches the string. For full detailed information about this algorithm, please go 
+through the report attached on the GitHub account.
